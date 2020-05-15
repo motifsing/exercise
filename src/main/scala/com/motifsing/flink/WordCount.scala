@@ -29,8 +29,6 @@ object WordCount {
     // 指定位置
     val specificStartOffsets = new java.util.HashMap[KafkaTopicPartition, java.lang.Long]()
 
-    env.createInput()
-
     specificStartOffsets.put(new KafkaTopicPartition("myTopic", 0), 0L)
     specificStartOffsets.put(new KafkaTopicPartition("myTopic", 1), 0L)
     specificStartOffsets.put(new KafkaTopicPartition("myTopic", 2), 0L)
