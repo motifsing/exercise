@@ -31,3 +31,10 @@ hs_err_pid*
 ### idea
 *.idea
 exercise.iml
+
+### test
+/src/main/scala/com/motifsing/test
+/src/main/java/com/motifsing/test
+
+### target
+target
