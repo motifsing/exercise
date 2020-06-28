@@ -104,11 +104,11 @@
       <version>4.0.0</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.spark/spark-examples -->
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-examples_2.11</artifactId>
-      <version>1.6.0-typesafe-001</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.apache.spark</groupId>-->
+<!--      <artifactId>spark-examples_2.11</artifactId>-->
+<!--      <version>1.6.0-typesafe-001</version>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>flink-scala_2.11</artifactId>
