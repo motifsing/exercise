@@ -66,19 +66,20 @@ public class ProducerUtil {
 
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-        return new KafkaProducer<String, String>(props);
+        return new KafkaProducer<>(props);
     }
 
     public static ProducerRecord<String, String> getRecords(String topicName, String key, String value) {
 
-        return new ProducerRecord<String, String>(topicName, key, value);
+        return new ProducerRecord<>(topicName, key, value);
     }
 
-    public static void sendRecord(Producer<String, String> producer, ProducerRecord<String, String> record){
+    public static void sendRecord(Producer<String, String> producer, ProducerRecord<String, String> record) {
         producer.send(record);
     }
 
-    public static void closeProducer(Producer<String, String> producer){
+    public static void closeProducer(Producer<String, String> producer) {
+
         producer.close();
     }
 
