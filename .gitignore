@@ -34,3 +34,6 @@ exercise.iml
 
 ### target
 target
+
+### resources
+/src/main/resources/
