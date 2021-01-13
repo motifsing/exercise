@@ -3,30 +3,29 @@ package com.motifsing.flink.operator;
 import com.motifsing.flink.source.FileCountryDictSourceFunction;
 import com.motifsing.flink.source.MyKafkaRecord;
 import com.motifsing.flink.source.MyKafkaRecordSchema;
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.datastream.ConnectedStreams;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
+import org.apache.flink.streaming.api.functions.co.CoProcessFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.util.Collector;
 
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Random;
 
 /**
  * @ClassName CountryCodeKeyBy
  * @Description
  * @Author Motifsing
- * @Date 2021/1/13 17:19
+ * @Date 2021/1/13 23:40
  * @Version 1.0
  **/
-public class CountryCodeKeyByObject {
+public class CountryCodeConnectCustomPartitioner {
     public static void main(String[] args) throws Exception {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(new Configuration());
@@ -34,18 +33,25 @@ public class CountryCodeKeyByObject {
         String path = "";
         DataStreamSource<String> countryCodeSource = env.addSource(new FileCountryDictSourceFunction(path));
 
-        KeyedStream<Tuple2<MyKafkaRecord, String>, MyKafkaRecord> countryCodeKeyedStream = countryCodeSource.map(new MapFunction<String, Tuple2<MyKafkaRecord, String>>() {
-            @Override
-            public Tuple2<MyKafkaRecord, String> map(String value) throws Exception {
-                String[] s = value.split(" ");
-                return Tuple2.of(new MyKafkaRecord(new String(s[0])), s[1] + "-" + s[2]);
-            }
-        }).keyBy(new KeySelector<Tuple2<MyKafkaRecord, String>, MyKafkaRecord>() {
-            @Override
-            public MyKafkaRecord getKey(Tuple2<MyKafkaRecord, String> value) throws Exception {
-                return value.f0;
-            }
-        });
+        DataStream<Tuple2<MyKafkaRecord, String>> countryCodeDataStream = countryCodeSource
+                .flatMap(new FlatMapFunction<String, Tuple2<MyKafkaRecord, String>>() {
+                    @Override
+                    public void flatMap(String value, Collector<Tuple2<MyKafkaRecord, String>> out) throws Exception {
+                        String[] split = value.split(" ");
+                        String key = split[0];
+                        String values = split[1] + "-" + split[2];
+                        for (int i=0; i<4; i++){
+                            String randomKey = i + "_" + key;
+                            Tuple2<MyKafkaRecord, String> t2 = Tuple2.of(new MyKafkaRecord(randomKey), values);
+                            out.collect(t2);
+                        }
+                    }
+                }).partitionCustom(new MyPartitioner(), new KeySelector<Tuple2<MyKafkaRecord, String>, MyKafkaRecord>() {
+                    @Override
+                    public MyKafkaRecord getKey(Tuple2<MyKafkaRecord, String> value) throws Exception {
+                        return value.f0;
+                    }
+                });
 
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", "");
@@ -59,16 +65,24 @@ public class CountryCodeKeyByObject {
 
         DataStreamSource<MyKafkaRecord> kafkaInput = env.addSource(kafkaConsumer);
 
-        KeyedStream<MyKafkaRecord, MyKafkaRecord> kafkaKeyedStream = kafkaInput.keyBy(new KeySelector<MyKafkaRecord, MyKafkaRecord>() {
+        DataStream<MyKafkaRecord> myKafkaDataStream = kafkaInput.map(new MapFunction<MyKafkaRecord, MyKafkaRecord>() {
+            @Override
+            public MyKafkaRecord map(MyKafkaRecord value) throws Exception {
+                String record = value.getRecord();
+                Random random = new Random();
+                int i = random.nextInt(4);
+                return new MyKafkaRecord(i + "_" + record);
+            }
+        }).partitionCustom(new MyPartitioner(), new KeySelector<MyKafkaRecord, MyKafkaRecord>() {
             @Override
             public MyKafkaRecord getKey(MyKafkaRecord value) throws Exception {
                 return value;
             }
         });
 
-        ConnectedStreams<Tuple2<MyKafkaRecord, String>, MyKafkaRecord> connect = countryCodeKeyedStream.connect(kafkaKeyedStream);
+        ConnectedStreams<Tuple2<MyKafkaRecord, String>, MyKafkaRecord> connect = countryCodeDataStream.connect(myKafkaDataStream);
 
-        SingleOutputStreamOperator<String> process = connect.process(new KeyedCoProcessFunction<MyKafkaRecord, Tuple2<MyKafkaRecord, String>, MyKafkaRecord, String>() {
+        SingleOutputStreamOperator<String> process = connect.process(new CoProcessFunction<Tuple2<MyKafkaRecord, String>, MyKafkaRecord, String>() {
 
             HashMap<String, String> hashMap = new HashMap<>();
 

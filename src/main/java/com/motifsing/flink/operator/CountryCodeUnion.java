@@ -36,7 +36,7 @@ public class CountryCodeUnion {
         properties.setProperty("group.id", "");
         properties.setProperty("flink.partition-discovery.interval-millis", "30000");
 
-        String topic = "test";
+        String topic = "";
 
         FlinkKafkaConsumer<String> kafkaConsumer = new FlinkKafkaConsumer<>(topic, new SimpleStringSchema(), properties);
         kafkaConsumer.setStartFromLatest();
