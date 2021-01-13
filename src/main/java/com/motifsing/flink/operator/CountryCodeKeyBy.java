@@ -31,7 +31,7 @@ public class CountryCodeKeyBy {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(new Configuration());
 
-        String path = "/user/test/test.txt";
+        String path = "";
         DataStreamSource<String> countryCodeSource = env.addSource(new FileCountryDictSourceFunction(path));
 
         KeyedStream<Tuple2<String, String>, String> countryCodeKeyedStream = countryCodeSource.map(new MapFunction<String, Tuple2<String, String>>() {
@@ -48,8 +48,8 @@ public class CountryCodeKeyBy {
         });
 
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "172.23.36.74:9092");
-        properties.setProperty("group.id", "test");
+        properties.setProperty("bootstrap.servers", "");
+        properties.setProperty("group.id", "");
         properties.setProperty("flink.partition-discovery.interval-millis", "30000");
 
         String topic = "test";

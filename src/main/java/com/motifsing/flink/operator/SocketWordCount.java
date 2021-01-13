@@ -1,4 +1,4 @@
-package com.motifsing.flink;
+package com.motifsing.flink.operator;
 
 import org.apache.flink.api.common.functions.*;
 import org.apache.flink.api.common.typeinfo.Types;
@@ -22,7 +22,7 @@ import java.util.Arrays;
  * @author 12284
  * @Date 2020/1/6 22:00
  */
-public class JavaWordCount {
+public class SocketWordCount {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(new Configuration());
         // 全局禁用operator chaining

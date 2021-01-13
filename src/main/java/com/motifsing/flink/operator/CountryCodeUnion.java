@@ -28,12 +28,12 @@ public class CountryCodeUnion {
 
         env.setParallelism(1);
 
-        String path = "/user/test/test.txt";
+        String path = "";
         DataStreamSource<String> countryCodeSource = env.addSource(new FileCountryDictSourceFunction(path));
 
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "172.23.36.74:9092");
-        properties.setProperty("group.id", "test");
+        properties.setProperty("bootstrap.servers", "");
+        properties.setProperty("group.id", "");
         properties.setProperty("flink.partition-discovery.interval-millis", "30000");
 
         String topic = "test";

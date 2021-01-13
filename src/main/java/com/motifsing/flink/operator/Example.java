@@ -1,4 +1,4 @@
-package com.motifsing.flink;
+package com.motifsing.flink.operator;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.datastream.DataStream;
