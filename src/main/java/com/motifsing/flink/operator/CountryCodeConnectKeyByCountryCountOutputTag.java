@@ -4,32 +4,34 @@ import com.motifsing.flink.source.FileCountryDictSourceFunction;
 import com.motifsing.flink.source.MyKafkaRecord;
 import com.motifsing.flink.source.MyKafkaRecordSchema;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.functions.ReduceFunction;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.datastream.ConnectedStreams;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.util.Collector;
+import org.apache.flink.util.OutputTag;
 
 import java.util.HashMap;
 import java.util.Properties;
 
-/**
- * @ClassName CountryCodeConnectKeyByCountryCount
+/***
+ * @author Motifsing
+ * @ClassName CountryCodeConnectKeyByCountryCountOutputTag
  * @Description
- * @Author Administrator
- * @Date 2021/1/18 15:16
+ * @Date 2021/1/19 14:52
  * @Version 1.0
- **/
-public class CountryCodeConnectKeyByCountryCount {
+ */
+
+public class CountryCodeConnectKeyByCountryCountOutputTag {
+
+    private static final OutputTag<String> ot = new OutputTag<String>("AM"){};
 
     public static void main(String[] args) throws Exception {
 
@@ -73,32 +75,26 @@ public class CountryCodeConnectKeyByCountryCount {
         ConnectedStreams<Tuple2<MyKafkaRecord, String>, MyKafkaRecord> connect = countryCodeKeyedStream.connect(kafkaKeyedStream);
 
         SingleOutputStreamOperator<Tuple2<String, Integer>> process = connect.process(new KeyedCoProcessFunction<MyKafkaRecord, Tuple2<MyKafkaRecord, String>, MyKafkaRecord, Tuple2<String, Integer>>() {
+            HashMap<String, String> hashMap = new HashMap<>();
 
             @Override
             public void processElement1(Tuple2<MyKafkaRecord, String> value, Context ctx, Collector<Tuple2<String, Integer>> out) throws Exception {
+                hashMap.put(value.f0.getRecord(), value.f1);
                 out.collect(Tuple2.of(value.f0.getRecord(), 3));
             }
 
             @Override
             public void processElement2(MyKafkaRecord value, Context ctx, Collector<Tuple2<String, Integer>> out) throws Exception {
+                String countryName = hashMap.get(value.getRecord());
+                String outStr = countryName == null ? "no match" : countryName;
+                if (value.getRecord().contains("AM")) {
+                    ctx.output(ot, outStr);
+                }
                 out.collect(Tuple2.of(value.getRecord(), 2));
             }
         });
 
-//        process.keyBy(0).min(1).print();
-
-//        process.keyBy(0).reduce(new ReduceFunction<Tuple2<String, Integer>>() {
-//            @Override
-//            public Tuple2<String, Integer> reduce(Tuple2<String, Integer> value1, Tuple2<String, Integer> value2) throws Exception {
-//                if (value1.f1 >= value2.f1) {
-//                    return value2;
-//                } else {
-//                    return value1;
-//                }
-//            }
-//        }).print();
-
-        process.keyBy(0).process(new KeyedProcessFunction<Tuple, Tuple2<String, Integer>, Tuple2<String, Integer>>() {
+        SingleOutputStreamOperator<Tuple2<String, Integer>> outPut = process.keyBy(0).process(new KeyedProcessFunction<Tuple, Tuple2<String, Integer>, Tuple2<String, Integer>>() {
 
             Integer minValue = Integer.MAX_VALUE;
 
@@ -111,7 +107,17 @@ public class CountryCodeConnectKeyByCountryCount {
                     out.collect(Tuple2.of(value.f0, minValue));
                 }
             }
-        }).print();
+        });
+
+        outPut.print();
+
+        DataStream<String> sideOutput = process.getSideOutput(ot);
+//        sideOutput.print();
+
+//        String targetPath = "C:\\Users\\Administrator\\Desktop\\test";
+//        sideOutput.writeAsText(targetPath, FileSystem.WriteMode.OVERWRITE);
+
+        sideOutput.writeToSocket("localhost", 9999, new SimpleStringSchema());
 
         env.execute();
     }
