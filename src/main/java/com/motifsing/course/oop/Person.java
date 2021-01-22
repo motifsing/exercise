@@ -15,11 +15,25 @@ public class Person {
 
     private String[] names;
 
+    public Person(){
+
+    }
+
+    public Person(String name, int birth){
+        this.name = name;
+        this.birth = birth;
+    }
+
     /**
-     * @author yhw
-     * 2021/1/21 14:32
-     * @param names 可变参数，传参数时("name1") 或者("name1", "name2")，可以保证无法传入null，因为传入0个参数时，接收到的实际值是一个空数组而不是null。
-     *              也可以写成String[] names,但是传参时需要 new String[]{"name1", "name2"},并且可以传入null
+     * 一个构造方法可以调用其他构造方法，这样做的目的是便于代码复用。调用其他构造方法的语法是this(…)：
+     */
+    public Person(String name){
+        this(name, 2000);
+    }
+
+    /**
+     * 可变参数，传参数时("name1") 或者("name1", "name2")，可以保证无法传入null，因为传入0个参数时，接收到的实际值是一个空数组而不是null。
+     * 也可以写成String[] names,但是传参时需要 new String[]{"name1", "name2"},并且可以传入null
      */
     public void setNames(String... names){
         this.names = names;
@@ -40,6 +54,13 @@ public class Person {
         this.name = name;
     }
 
+    /**
+     * 重载方法
+     */
+    public void setName(){
+        this.name = "default";
+    }
+
     public int getBirth() {
         return birth;
     }
@@ -54,6 +75,10 @@ public class Person {
 
     public int getAge(){
         return getCurrentAge(2020);
+    }
+
+    public int getAge(int currentYear) {
+        return getCurrentAge(currentYear);
     }
 
 }
