@@ -14,7 +14,7 @@ public class KafkaRichParallelSource {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(new Configuration());
 
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "172.23.36.74:9092");
+        properties.setProperty("bootstrap.servers", ":9092");
         properties.setProperty("group.id", "test");
         properties.setProperty("flink.partition-discovery.interval-millis", "30000");
 
