@@ -23,7 +23,7 @@ public class KafkaRichParallelSink {
 
         Properties properties = new Properties();
 
-        properties.setProperty("bootstrap.servers", "172.23.44.249:9092");
+        properties.setProperty("bootstrap.servers", ":9092");
         properties.setProperty("retries", "3");
 
         FlinkKafkaProducer<String> stringFlinkKafkaProducer = new FlinkKafkaProducer<>(topic, new SimpleStringSchema(), properties);
