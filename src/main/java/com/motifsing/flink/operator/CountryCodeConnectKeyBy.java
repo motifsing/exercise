@@ -26,7 +26,7 @@ import java.util.Properties;
  * @Date 2021/1/13 17:19
  * @Version 1.0
  **/
-public class CountryCodeKeyBy {
+public class CountryCodeConnectKeyBy {
     public static void main(String[] args) throws Exception {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(new Configuration());
