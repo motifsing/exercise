@@ -4,6 +4,8 @@ import com.motifsing.flink.source.FileCountryDictSourceFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
+import org.apache.flink.runtime.state.StateBackend;
+import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
@@ -46,7 +48,8 @@ public class FileSourceRestartMain {
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(6, Time.of(1, TimeUnit.SECONDS)));
 
         // 3.checkpoint存储位置
-
+        FsStateBackend fsStateBackend = new FsStateBackend("file:///C:\\Users\\Administrator\\Desktop\\checkpoint", true);
+        env.setStateBackend(fsStateBackend);
 
         String path = "/user/test/countryCode/test.txt";
 //        DataStreamSource<String> source = env.addSource(new FileCountryDictSourceFunction(path));
@@ -62,7 +65,7 @@ public class FileSourceRestartMain {
                 }
                 return value;
             }
-        }).print();
+        }).uid("map").name("This is a map...").print();
 
         env.execute();
     }
