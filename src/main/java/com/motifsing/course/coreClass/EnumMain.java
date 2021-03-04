@@ -17,6 +17,10 @@ public class EnumMain {
         }
         System.out.println(day.name());
         System.out.println(day.toString());
+        System.out.println(day.getDayValue());
+        for (Weekday value: Weekday.values()){
+            System.out.println(value);
+        }
     }
 }
 
@@ -38,16 +42,28 @@ enum Weekday {
     THU(4, "星期四"), FRI(5, "星期五"), SAT(6, "星期六"),
     SUN(0, "星期日");
 
-    public final int dayValue;
-    private final String chinese;
+    private int dayValue;
+    private String chinese;
 
-    private Weekday(int dayValue, String chinese) {
+    Weekday(int dayValue, String chinese) {
         this.dayValue = dayValue;
         this.chinese = chinese;
+    }
+
+    public int getDayValue() {
+        return dayValue;
+    }
+
+    public String getChinese() {
+        return chinese;
     }
 
     @Override
     public String toString() {
         return this.chinese;
+    }
+
+    public static Weekday randomType(Weekday[] values){
+        return values[(int)(Math.random()*values.length)];
     }
 }
