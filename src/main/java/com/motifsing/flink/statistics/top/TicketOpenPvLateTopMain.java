@@ -1,7 +1,7 @@
 package com.motifsing.flink.statistics.top;
 
-import com.clearspring.analytics.util.Lists;
-import org.apache.commons.collections.IteratorUtils;
+import com.motifsing.flink.statistics.top.ActivityEnum;
+import com.motifsing.flink.statistics.top.ActivitySourceFunction;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.state.ListState;
@@ -23,13 +23,13 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
+import org.apache.flink.util.OutputTag;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.Timestamp;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * @ClassName TicketOpenPvTopNMain
@@ -38,24 +38,31 @@ import java.util.List;
  * @Date 2021/3/4 16:33
  * @Version 1.0
  **/
-public class TicketOpenPvTopMain {
+public class TicketOpenPvLateTopMain {
     public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(new Configuration());
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.setParallelism(1);
+
+        OutputTag<Tuple2<String, Long>> lateTag = new OutputTag<Tuple2<String, Long>>("late") {};
 
         // 创建数据源
-        DataStreamSource<Tuple3<ActivityEnum, String, Long>> source = env.addSource(new ActivitySourceFunction());
+        DataStreamSource<String> source = env.socketTextStream("localhost", 9999);
 
-        SingleOutputStreamOperator<Tuple3<String, String, Long>> output = source.map(new MapFunction<Tuple3<ActivityEnum, String, Long>, Tuple3<String, String, Long>>() {
+        source.print("source:");
+
+        SingleOutputStreamOperator<Tuple2<String, Long>> output = source.map(new MapFunction<String, Tuple2<String, Long>>() {
             @Override
-            public Tuple3<String, String, Long> map(Tuple3<ActivityEnum, String, Long> value) throws Exception {
-                return Tuple3.of(value.f0.getName(), value.f1, value.f2);
+            public Tuple2<String, Long> map(String value) throws Exception {
+                String[] s = value.split("\\|");
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                return Tuple2.of(s[0], sdf.parse(s[1]).getTime());
             }
-        }).assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks<Tuple3<String, String, Long>>() {
+        }).assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks<Tuple2<String, Long>>() {
 
             private long currentMaxTimestamp = 0L;
             // 允许最大乱序时间
-            private long maxOutOfOrderTime = 10000L;
+            private long maxOutOfOrderTime = 1000L;
 
             @NotNull
             @Override
@@ -64,41 +71,45 @@ public class TicketOpenPvTopMain {
             }
 
             @Override
-            public long extractTimestamp(Tuple3<String, String, Long> element, long previousElementTimestamp) {
-                Long eventTimestamp = element.f2;
+            public long extractTimestamp(Tuple2<String, Long> element, long previousElementTimestamp) {
+                long eventTimestamp = element.f1;
                 currentMaxTimestamp = Math.max(eventTimestamp, currentMaxTimestamp);
                 return eventTimestamp;
             }
         });
 
-        output.keyBy(f -> f.f0)
-                .window(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
-                .aggregate(new AggregateFunction<Tuple3<String, String, Long>, Tuple2<String, Long>, Tuple2<String, Long>>() {
+        SingleOutputStreamOperator<Tuple3<String, Long, Long>> aggregate = output.keyBy(f -> f.f0)
+                .window(SlidingEventTimeWindows.of(Time.seconds(60), Time.seconds(5)))
+                .allowedLateness(Time.seconds(3))
+                .sideOutputLateData(lateTag)
+                .aggregate(new AggregateFunction<Tuple2<String, Long>, Long, Long>() {
                     @Override
-                    public Tuple2<String, Long> createAccumulator() {
-                        return Tuple2.of("", 0L);
+                    public Long createAccumulator() {
+                        return 0L;
                     }
 
                     @Override
-                    public Tuple2<String, Long> add(Tuple3<String, String, Long> value, Tuple2<String, Long> accumulator) {
-                        return Tuple2.of(accumulator.f0, accumulator.f1 + 1);
+                    public Long add(Tuple2<String, Long> value, Long accumulator) {
+                        return accumulator + 1;
                     }
 
                     @Override
-                    public Tuple2<String, Long> getResult(Tuple2<String, Long> accumulator) {
+                    public Long getResult(Long accumulator) {
                         return accumulator;
                     }
 
                     @Override
-                    public Tuple2<String, Long> merge(Tuple2<String, Long> a, Tuple2<String, Long> b) {
-                        return Tuple2.of(a.f0, a.f1 + b.f1);
+                    public Long merge(Long a, Long b) {
+                        return a + b;
                     }
-                }, new WindowFunction<Tuple2<String, Long>, Tuple3<String, Long, Long>, String, TimeWindow>() {
+                }, new WindowFunction<Long, Tuple3<String, Long, Long>, String, TimeWindow>() {
                     @Override
-                    public void apply(String s, TimeWindow window, Iterable<Tuple2<String, Long>> input, Collector<Tuple3<String, Long, Long>> out) throws Exception {
-                        out.collect(Tuple3.of(s, window.getEnd(), input.iterator().next().f1));
+                    public void apply(String s, TimeWindow window, Iterable<Long> input, Collector<Tuple3<String, Long, Long>> out) throws Exception {
+                        out.collect(Tuple3.of(s, window.getEnd(), input.iterator().next()));
                     }
-                })
+                });
+        aggregate.print("aggregate:");
+        aggregate
                 .keyBy(f -> f.f1)
                 .process(new KeyedProcessFunction<Long, Tuple3<String, Long, Long>, String>() {
 
@@ -120,7 +131,7 @@ public class TicketOpenPvTopMain {
 
                         StringBuilder sb = new StringBuilder();
                         sb.append("=======================================\n");
-                        String format = "yyyy-MM-dd  HH:mm:ss";
+                        String format = "yyyy/MM/dd  HH:mm:ss";
                         SimpleDateFormat sdf = new SimpleDateFormat(format);
                         String dateTimeStr = sdf.format(timestamp - 1000);
                         sb.append("窗口结束时间：").append(dateTimeStr).append("\n");
@@ -128,7 +139,7 @@ public class TicketOpenPvTopMain {
                         for (int i=0; i<Math.min(3, copy.size());i++){
                             Tuple3<String, Long, Long> t = copy.get(i);
                             sb.append("NO").append(i+1).append(": ")
-                                    .append("activity_id -> ").append(t.f0)
+                                    .append("ID -> ").append(t.f0)
                                     .append(", 热门度 -> ").append(t.f2).append("\n");
                         }
                         sb.append("=========================================\n\n");
@@ -150,6 +161,8 @@ public class TicketOpenPvTopMain {
                         ctx.timerService().registerEventTimeTimer(value.f1 + 1000);
                     }
                 }).print();
+
+        aggregate.getSideOutput(lateTag).print("late:");
 
         env.execute("activityTopCount");
     }
