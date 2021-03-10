@@ -129,16 +129,16 @@ public class TicketOpenPvLateTopMain {
     }
 
     public static class KeyedProcess extends KeyedProcessFunction<Long, Tuple3<String, Long, Long>, String> {
-        MapState<Long, Long> activityMapState;
+        MapState<String, Long> activityMapState;
 
         @Override
         public void open(Configuration parameters) throws Exception{
-            activityMapState = getRuntimeContext().getMapState(new MapStateDescriptor<Long, Long>("activityMapState", Long.class, Long.class));
+            activityMapState = getRuntimeContext().getMapState(new MapStateDescriptor<>("activityMapState", String.class, Long.class));
         }
 
         @Override
         public void processElement(Tuple3<String, Long, Long> value, Context ctx, Collector<String> out) throws Exception {
-            activityMapState.put(value.f1, value.f2);
+            activityMapState.put(value.f0, value.f2);
             ctx.timerService().registerEventTimeTimer(value.f1 + 1000L);
             // 注册一个3s后的定时器，用来清空状态
             ctx.timerService().registerEventTimeTimer(value.f1 + 3000L);
@@ -153,14 +153,9 @@ public class TicketOpenPvLateTopMain {
             }
 
 
-            List<Map.Entry<Long, Long>> entries = Lists.newArrayList(activityMapState.entries());
+            List<Map.Entry<String, Long>> entries = Lists.newArrayList(activityMapState.entries());
 
-            entries.sort(new Comparator<Map.Entry<Long, Long>>() {
-                @Override
-                public int compare(Map.Entry<Long, Long> o1, Map.Entry<Long, Long> o2) {
-                    return o2.getValue().compareTo(o1.getValue());
-                }
-            });
+            entries.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
 
             StringBuilder sb = new StringBuilder();
             sb.append("=======================================\n");
@@ -170,7 +165,7 @@ public class TicketOpenPvLateTopMain {
             sb.append("窗口结束时间：").append(dateTimeStr).append("\n");
 
             for (int i=0; i<Math.min(3, entries.size());i++){
-                Map.Entry<Long, Long> longLongEntry = entries.get(i);
+                Map.Entry<String, Long> longLongEntry = entries.get(i);
                 sb.append("NO").append(i+1).append(": ")
                         .append("ID -> ").append(longLongEntry.getKey())
                         .append(", 热门度 -> ").append(longLongEntry.getValue()).append("\n");
