@@ -62,21 +62,24 @@ public class TimestampWatermarkMethod6 {
             }
         });
 
-        SingleOutputStreamOperator<String> stringSingleOutputStreamOperator = stringDataStreamSource.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<String>() {
-            @Override
-            public long extractAscendingTimestamp(String element) {
-                String[] split = element.split("\t");
-                return Long.parseLong(split[0]);
-            }
-        });
+        SingleOutputStreamOperator<String> stringSingleOutputStreamOperator = stringDataStreamSource
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<String>() {
+                    @Override
+                    public long extractAscendingTimestamp(String element) {
+                        String[] split = element.split("\t");
+                        return Long.parseLong(split[0]);
+                    }
+                });
 
-        SingleOutputStreamOperator<String> process = stringSingleOutputStreamOperator.keyBy(new KeySelector<String, String>() {
-            @Override
-            public String getKey(String value) throws Exception {
-                String[] split = value.split("\t");
-                return split[1];
-            }
-        }).timeWindow(Time.seconds(2))
+        SingleOutputStreamOperator<String> process = stringSingleOutputStreamOperator
+                .keyBy(new KeySelector<String, String>() {
+                    @Override
+                    public String getKey(String value) throws Exception {
+                        String[] split = value.split("\t");
+                        return split[1];
+                    }
+                })
+                .timeWindow(Time.seconds(2))
                 .allowedLateness(Time.seconds(2))
                 .sideOutputLateData(late)
                 .process(new ProcessWindowFunction<String, String, String, TimeWindow>() {
