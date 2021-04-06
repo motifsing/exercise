@@ -196,11 +196,13 @@
       <artifactId>parquet-column</artifactId>
       <version>${parquet.version}</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-cep -->
     <dependency>
-      <groupId>redis.clients</groupId>
-      <artifactId>jedis</artifactId>
-      <version>2.8.1</version>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-cep_2.11</artifactId>
+      <version>${flink.version}</version>
     </dependency>
+
   </dependencies>
 
   <build>
