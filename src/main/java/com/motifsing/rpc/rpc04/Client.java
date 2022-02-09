@@ -1,4 +1,4 @@
-package com.motifsing.rpc.rpco4;
+package com.motifsing.rpc.rpc04;
 
 import com.motifsing.rpc.entity.Person;
 //import com.motifsing.rpc.entity.User;

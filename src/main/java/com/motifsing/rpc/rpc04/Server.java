@@ -1,7 +1,7 @@
-package com.motifsing.rpc.rpco4;
+package com.motifsing.rpc.rpc04;
 
-import com.motifsing.rpc.rpco4.server.PersonServiceImpl;
-import com.motifsing.rpc.rpco4.server.UserServiceImpl;
+import com.motifsing.rpc.rpc04.server.PersonServiceImpl;
+import com.motifsing.rpc.rpc04.server.UserServiceImpl;
 
 import java.io.InputStream;
 import java.io.ObjectInputStream;

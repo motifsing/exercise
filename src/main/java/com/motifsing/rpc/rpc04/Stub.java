@@ -1,4 +1,4 @@
-package com.motifsing.rpc.rpco4;
+package com.motifsing.rpc.rpc04;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;

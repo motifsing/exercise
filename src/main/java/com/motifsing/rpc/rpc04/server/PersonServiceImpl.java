@@ -1,4 +1,4 @@
-package com.motifsing.rpc.rpco4.server;
+package com.motifsing.rpc.rpc04.server;
 
 import com.motifsing.rpc.entity.Person;
 import com.motifsing.rpc.service.IPersonService;
