@@ -1,6 +1,6 @@
 package com.motifsing.flink.windows;
 
-import akka.stream.impl.ReducerState;
+//import akka.stream.impl.ReducerState;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
@@ -38,7 +38,7 @@ public class ConnectJoinTimeServerStateSessionWindow {
                 .keyBy(f -> f.f0);
 
         ConnectedStreams<Tuple2<String, Integer>, Tuple2<String, Integer>> connect = input1.connect(input2);
-        
+
         connect.process(new KeyedCoProcessFunction<String, Tuple2<String, Integer>, Tuple2<String, Integer>, String>() {
             private ValueState<Long> dateTime = null;
             private final int interval = 3000;
