@@ -16,7 +16,6 @@ import java.util.HashMap;
 /**
  * @Author： YangHW
  * @Date: 2022/2/7 15:30
- * @description: TODO 类描述
  */
 public class Server {
     private static boolean is_running = true;
@@ -26,8 +25,8 @@ public class Server {
     public static void main(String[] args) throws Exception {
 
         // 向注册中心注册服务
-        REGISTRY_MAP.put("com.qsl.rpc.service.IUserService", new UserServiceImpl());
-        REGISTRY_MAP.put("com.qsl.rpc.service.IPersonService", new PersonServiceImpl());
+        REGISTRY_MAP.put("com.motifsing.rpc.service.IUserService", new UserServiceImpl());
+        REGISTRY_MAP.put("com.motifsing.rpc.service.IPersonService", new PersonServiceImpl());
 
         ServerSocket serverSocket = new ServerSocket(8888);
         while (is_running) {
