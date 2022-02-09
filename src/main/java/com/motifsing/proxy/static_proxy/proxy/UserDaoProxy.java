@@ -27,7 +27,7 @@ public class UserDaoProxy implements IUserDao {
         int count = target.delete(id);
 
         // 后置处理，例如提交事务或事务回滚
-        System.out.println("前置处理...");
+        System.out.println("后置处理...");
         return count;
     }
 

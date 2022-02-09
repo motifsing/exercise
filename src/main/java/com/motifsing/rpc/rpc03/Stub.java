@@ -24,37 +24,35 @@ public class Stub {
 
     static class NetInvocationHandler implements InvocationHandler {
 
-    /**
-     * @Author: YangHW
-     * @DateTime: 2022/2/8 17:38
-     * @Description: TODO
-     * @param: proxy
-   * @param: method
-   * @param: args
-     * @Return: java.lang.Object
-     **/
+        /**
+         * @Author: YangHW
+         * @DateTime: 2022/2/8 17:38
+         * @param: proxy
+         * @param: method
+         * @param: args
+         * @Return: java.lang.Object
+         **/
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            Socket s = new Socket("127.0.0.1", 8888);
 
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Socket s = new Socket("127.0.0.1", 8888);
+            // 网络传输数据
+            ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+            // 传输方法名、方法参数类型、方法参数值；可能会有方法重载，所以要传参数列表
+            oos.writeUTF(method.getName());
+            Class[] parameterTypes = method.getParameterTypes();
+            oos.writeObject(parameterTypes);
+            oos.writeObject(args);
 
-        // 网络传输数据
-        ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-        // 传输方法名、方法参数类型、方法参数值；可能会有方法重载，所以要传参数列表
-        oos.writeUTF(method.getName());
-        Class[] parameterTypes = method.getParameterTypes();
-        oos.writeObject(parameterTypes);
-        oos.writeObject(args);
+            // 从 socket 读响应值
+            ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+            User user = (User) ois.readObject();
 
-        // 从 socket 读响应值
-        ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
-        User user = (User) ois.readObject();
+            oos.close();
+            ois.close();
+            s.close();
 
-        oos.close();
-        ois.close();
-        s.close();
-
-        return user;
-    }
+            return user;
+        }
     }
 }
